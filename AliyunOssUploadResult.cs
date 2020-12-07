@@ -7,12 +7,12 @@ namespace Geexbox.Aliyun.Oss
 {
     public class AliyunOssUploadResult
     {
-        public AliyunOssUploadResult(string urlPrefix, string md5, long fileSize, string mimeType, string fileName = default)
+        public AliyunOssUploadResult(string urlPrefix, string key, long fileSize, string mimeType, string fileName = default)
         {
             Name = fileName ?? "unknown";
             Size = fileSize;
-            Url = urlPrefix.TrimEnd('/') + "/" + Md5;
-            Md5 = md5;
+            Url = urlPrefix.TrimEnd('/') + "/" + Key;
+            Key = key;
             MimeType = mimeType;
         }
 
@@ -20,6 +20,6 @@ namespace Geexbox.Aliyun.Oss
         public long Size { get; }
         public string MimeType { get; }
         public string Url { get; }
-        public string Md5 { get; }
+        public string Key { get; }
     }
 }

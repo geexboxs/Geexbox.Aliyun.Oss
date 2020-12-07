@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 using Aliyun.OSS;
 
@@ -27,17 +28,15 @@ namespace Geexbox.Aliyun.Oss
         {
             var base64WithExt = dataUrl.DataUrlToBase64WithExt();
             var md5 = dataUrl.ComputeMd5();
-            //var md5FileName = $"{md5}.{base64WithExt.ext}";
+            //var md5FileName = $"{md5}.{base64WithExt.mime}";
             var fileContent = Convert.FromBase64String(base64WithExt.base64);
             _ = this._ossClient.PutObject(this._imageBulkName, md5, new MemoryStream(fileContent), new ObjectMetadata()
             {
-                ContentType = base64WithExt.ext,
-                UserMetadata =
-                {
-                    {"fileName",fileName}
-                }
+                ContentType = base64WithExt.mime,
+                UserMetadata = { { "fileName", fileName.ToBase64() } }
+
             });
-            return new AliyunOssUploadResult(_options.ImageUrlPrefix, md5, fileContent.Length, base64WithExt.ext, fileName);
+            return new AliyunOssUploadResult(_options.ImageUrlPrefix, md5, fileContent.Length, base64WithExt.mime, fileName);
         }
 
         public AliyunOssUploadResult UploadPostFile(IFormFile formFile)
@@ -49,17 +48,24 @@ namespace Geexbox.Aliyun.Oss
             _ = this._ossClient.PutObject(this._imageBulkName, md5, stream, new ObjectMetadata()
             {
                 ContentType = fileMime,
-                UserMetadata =
-                {
-                    {"fileName",formFile.FileName}
-                }
+                UserMetadata = { { "fileName", formFile.FileName.ToBase64() } }
             });
+
             return new AliyunOssUploadResult(_options.ImageUrlPrefix, md5, stream.Length, fileMime, formFile.FileName);
         }
 
         public OssObject GetFile(string key)
         {
             var file = this._ossClient.GetObject(_options.BulkName, key);
+            try
+            {
+                file.Metadata.UserMetadata["fileName"] =
+                    Encoding.UTF8.GetString(Convert.FromBase64String(file.Metadata.UserMetadata["fileName"]));
+            }
+            catch (Exception e)
+            {
+                file.Metadata.UserMetadata["fileName"] = null;
+            }
             return file;
         }
 
