@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Geexbox.Extensions;
+
 using Microsoft.AspNetCore.Http;
 
 namespace Geexbox.Aliyun.Oss
@@ -26,19 +28,18 @@ namespace Geexbox.Aliyun.Oss
 
             if (context.Request.Form?.Files?.Any() == true)
             {
-                var resultList = new List<AliyunOssUploadResult>();
+                var resultList = new List<string>();
                 var files = context.Request.Form.Files
                     .ToArray();
 
                 foreach (var file in files)
                 {
-                    var result = _ossClient.UploadPostFile(file);
+                    var result = _ossClient.UploadFile(file.OpenReadStream(), file.FileName, file.ContentType);
                     resultList.Add(result);
                 }
 
 
-                var names = files.Select(f => f.FileName);
-                return context.Response.WriteAsync(new { files = resultList }.ToJson());
+                return context.Response.WriteAsync(new { files = resultList.Select(x => _ossClient.GetFileUrl(x)) }.ToJson());
             }
             return _next.Invoke(context);
         }

@@ -24,7 +24,7 @@ namespace Geexbox.Aliyun.Oss
             this._options = options;
         }
 
-        public AliyunOssUploadResult UploadBase64(string dataUrl, string fileName)
+        public string UploadFile(string dataUrl, string fileName)
         {
             var base64WithExt = dataUrl.DataUrlToBase64WithExt();
             var md5 = dataUrl.ComputeMd5();
@@ -36,22 +36,25 @@ namespace Geexbox.Aliyun.Oss
                 UserMetadata = { { "fileName", fileName.ToBase64() } }
 
             });
-            return new AliyunOssUploadResult(_options.ImageUrlPrefix, md5, fileContent.Length, base64WithExt.mime, fileName);
+            return md5;
         }
 
-        public AliyunOssUploadResult UploadPostFile(IFormFile formFile)
+        public Uri GetFileUrl(string md5)
         {
-            var stream = formFile.OpenReadStream();
+            return new Uri(_options.SsoUrlPrefix.TrimEnd('/') + "/" + md5);
+        }
+
+        public string UploadFile(Stream stream, string fileName, string mimeType)
+        {
             var md5 = stream.ComputeMd5();
-            var fileMime = formFile.ContentType;
             //var fileExt = formFile.FileName.Split('.').LastOrDefault() ?? "";
             _ = this._ossClient.PutObject(this._imageBulkName, md5, stream, new ObjectMetadata()
             {
-                ContentType = fileMime,
-                UserMetadata = { { "fileName", formFile.FileName.ToBase64() } }
+                ContentType = mimeType,
+                UserMetadata = { { "fileName", fileName.ToBase64() } }
             });
 
-            return new AliyunOssUploadResult(_options.ImageUrlPrefix, md5, stream.Length, fileMime, formFile.FileName);
+            return md5;
         }
 
         public OssObject GetFile(string key)
